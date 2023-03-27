@@ -27,9 +27,10 @@ class AudioPeaks {
    * Writes a JSON file if an output path was specified.
    * @param {String} sourcePath          - Source audio file path.
    * @param {String|Function} outputPath - Output audio file path or Callback fn.
+   * @param {String} ffmpegPath
    * @param {Function|Undefined} cb                - Callback fn
    */
-  getPeaks(sourcePath, outputPath, cb) {
+  getPeaks(sourcePath, outputPath, ffmpegPath, cb) {
     if (typeof sourcePath !== 'string') {
       return cb(new Error(`sourcePath param is not valid`));
     }
@@ -43,7 +44,7 @@ class AudioPeaks {
       if (err) return cb(err);
 
       this.sourceFilePath = sourcePath;
-      this.extractPeaks((err, peaks) => {
+      this.extractPeaks(ffmpegPath, (err, peaks) => {
         if (err) return cb(err);
         if (!outputPath) return cb(null, peaks);
 
@@ -88,8 +89,8 @@ class AudioPeaks {
    * Extracts data peaks from an audio file using ffmpeg.
    * @param {Function} cb Callback fn
    */
-  extractPeaks(cb) {
-    this.convertFile((err, rawfilepath) => {
+  extractPeaks(ffmpegPath, cb) {
+    this.convertFile(ffmpegPath ,(err, rawfilepath) => {
       if (err) return cb(err);
 
       fs.stat(rawfilepath, (err, stats) => {
@@ -133,14 +134,14 @@ class AudioPeaks {
     this.peaks.update(samples);
   }
 
-  convertFile(cb) {
+  convertFile(ffmpegPath ,cb) {
     fs.mkdtemp(path.join(os.tmpdir(), 'ffpeaks-'), (err, tmpPath) => {
       if (err) return cb(err);
 
       let error = '';
 
       const rawfilepath = path.join(tmpPath, 'audio.raw');
-      const ffmpeg = spawn('ffmpeg', [
+      const ffmpeg = spawn(ffmpegPath, [
         '-v',
         'error',
         '-i',
